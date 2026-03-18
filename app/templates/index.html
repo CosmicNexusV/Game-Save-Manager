@@ -34,6 +34,12 @@
           </svg>
           添加游戏
         </button>
+        <a href="/logout" class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+          退出
+        </a>
       </div>
     </div>
   </header>
@@ -244,6 +250,23 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" onclick="closeModal('modal-settings')">取消</button>
             <button type="submit" class="btn btn-primary">保存设置</button>
+          </div>
+        </form>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text2);margin-bottom:14px">修改密码</div>
+        <form onsubmit="changePassword(event)">
+          <div class="form-group">
+            <label>当前密码</label>
+            <input type="password" id="pw-old" placeholder="输入当前密码">
+          </div>
+          <div class="form-group">
+            <label>新密码</label>
+            <input type="password" id="pw-new" placeholder="输入新密码">
+          </div>
+          <div class="modal-footer" style="border:none;padding-top:4px;margin-top:0">
+            <button type="submit" class="btn btn-ghost">修改密码</button>
           </div>
         </form>
       </div>

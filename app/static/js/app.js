@@ -552,3 +552,19 @@ function setupDragDrop() {
     }
   });
 }
+
+/* ── Change Password ──────────────────────────────────────────────────── */
+async function changePassword(e) {
+  e.preventDefault();
+  const oldPw = document.getElementById('pw-old').value;
+  const newPw = document.getElementById('pw-new').value;
+  if (!oldPw || !newPw) { showToast('请填写当前密码和新密码', 'error'); return; }
+  try {
+    await api('POST', '/change-password', { old_password: oldPw, new_password: newPw });
+    document.getElementById('pw-old').value = '';
+    document.getElementById('pw-new').value = '';
+    showToast('密码已修改', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}

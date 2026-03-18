@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 - Game Save Manager</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117;
+  --bg2: #181c27;
+  --bg3: #1e2333;
+  --border: #2a2f45;
+  --border2: #3a4060;
+  --accent: #6c63ff;
+  --accent2: #8b83ff;
+  --accent-dim: rgba(108,99,255,0.15);
+  --danger: #e05c5c;
+  --text: #e8eaf0;
+  --text2: #9ba3c4;
+  --text3: #6b748f;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --transition: 0.2s ease;
+}
+html { font-size: 14px; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-container {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px;
+}
+.login-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  box-shadow: var(--shadow);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.logo svg {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+}
+.logo-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.login-subtitle {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text3);
+  margin-bottom: 28px;
+}
+.error-msg {
+  background: rgba(224,92,92,0.12);
+  border: 1px solid rgba(224,92,92,0.3);
+  color: #f08080;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--text2);
+}
+.form-group input[type="password"] {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.form-group input[type="password"]:focus {
+  border-color: var(--accent);
+}
+.btn-login {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  margin-top: 4px;
+}
+.btn-login:hover {
+  background: var(--accent2);
+  transform: translateY(-1px);
+}
+.btn-login:active {
+  transform: translateY(0);
+}
+</style>
+</head>
+<body>
+<div class="login-container">
+  <div class="login-box">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="6" width="20" height="12" rx="2"/>
+        <path d="M12 12h.01M8 12h.01M16 12h.01"/>
+        <path d="M6 9v6M18 9v6"/>
+      </svg>
+      <span class="logo-text">Game Save Manager</span>
+    </div>
+    <p class="login-subtitle">请输入密码以继续</p>
+
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+      <div class="form-group">
+        <label for="password">密码</label>
+        <input type="password" id="password" name="password" placeholder="请输入访问密码" autofocus required>
+      </div>
+      <button type="submit" class="btn-login">登录</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

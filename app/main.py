@@ -5,19 +5,23 @@ import uuid
 import zipfile
 import io
 from datetime import datetime, timezone, timedelta
+from functools import wraps
 from pathlib import Path
 
-from flask import Flask, request, jsonify, send_file, render_template, send_from_directory
+from flask import Flask, request, jsonify, send_file, render_template, send_from_directory, session, redirect, url_for
 from flask_cors import CORS
 from PIL import Image
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 * 1024  # 10GB
 
 DATA_DIR = Path('/data')
+APP_DIR = Path('/app')
 GAMES_DIR = DATA_DIR / 'games'
 SETTINGS_FILE = DATA_DIR / 'settings.json'
+PASSWORD_FILE = APP_DIR / 'password.txt'
 
 GAMES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -27,6 +31,70 @@ DEFAULT_SETTINGS = {
 
 # 东八区时区 (UTC+8)
 TZ_CST = timezone(timedelta(hours=8))
+
+
+# ── 密码初始化 ─────────────────────────────────────────────────────────────────
+
+def init_password():
+    """启动时若无密码文件则自动生成初始密码 123456。"""
+    if not PASSWORD_FILE.exists():
+        PASSWORD_FILE.write_text(generate_password_hash('123456'))
+
+
+init_password()
+app.secret_key = os.urandom(32)
+
+
+# ── 登录保护 ───────────────────────────────────────────────────────────────────
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('logged_in'):
+            if request.path.startswith('/api/'):
+                return jsonify({'error': 'Unauthorized'}), 401
+            return redirect(url_for('login_page'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login_page():
+    if session.get('logged_in'):
+        return redirect(url_for('index'))
+    error = None
+    if request.method == 'POST':
+        pw = request.form.get('password', '')
+        stored_hash = PASSWORD_FILE.read_text().strip()
+        if check_password_hash(stored_hash, pw):
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        error = '密码错误，请重试'
+    return render_template('login.html', error=error)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login_page'))
+
+
+@app.route('/api/change-password', methods=['POST'])
+@login_required
+def api_change_password():
+    data = request.get_json()
+    old_pw = data.get('old_password', '')
+    new_pw = data.get('new_password', '').strip()
+    if not new_pw:
+        return jsonify({'error': '新密码不能为空'}), 400
+    stored_hash = PASSWORD_FILE.read_text().strip()
+    if not check_password_hash(stored_hash, old_pw):
+        return jsonify({'error': '当前密码错误'}), 400
+    PASSWORD_FILE.write_text(generate_password_hash(new_pw))
+    return jsonify({'ok': True})
+
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
 
 def get_cst_now():
     """Get current time in China Standard Time (UTC+8)"""
@@ -158,16 +226,19 @@ def extract_exe_icon(file_path):
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 
 @app.route('/api/settings', methods=['GET'])
+@login_required
 def api_get_settings():
     return jsonify(load_settings())
 
 
 @app.route('/api/settings', methods=['PUT'])
+@login_required
 def api_save_settings():
     data = request.get_json()
     settings = load_settings()
@@ -178,6 +249,7 @@ def api_save_settings():
 
 
 @app.route('/api/games', methods=['GET'])
+@login_required
 def api_list_games():
     games = []
     if GAMES_DIR.exists():
@@ -196,6 +268,7 @@ def api_list_games():
 
 
 @app.route('/api/games', methods=['POST'])
+@login_required
 def api_add_game():
     name = request.form.get('name', '').strip()
     if not name:
@@ -244,6 +317,7 @@ def api_add_game():
 
 
 @app.route('/api/games/<game_id>', methods=['PUT'])
+@login_required
 def api_update_game(game_id):
     info = get_game_info(game_id)
     if not info:
@@ -281,6 +355,7 @@ def api_update_game(game_id):
 
 
 @app.route('/api/games/<game_id>', methods=['DELETE'])
+@login_required
 def api_delete_game(game_id):
     game_dir = get_game_dir(game_id)
     if not game_dir.exists():
@@ -290,6 +365,7 @@ def api_delete_game(game_id):
 
 
 @app.route('/api/games/<game_id>/icon')
+@login_required
 def api_game_icon(game_id):
     icon_path = get_game_dir(game_id) / 'icon.png'
     if icon_path.exists():
@@ -304,6 +380,7 @@ def api_game_icon(game_id):
 # ── Saves ─────────────────────────────────────────────────────────────────────
 
 @app.route('/api/games/<game_id>/saves', methods=['GET'])
+@login_required
 def api_list_saves(game_id):
     if not get_game_dir(game_id).exists():
         return jsonify({'error': 'Game not found'}), 404
@@ -311,6 +388,7 @@ def api_list_saves(game_id):
 
 
 @app.route('/api/games/<game_id>/saves', methods=['POST'])
+@login_required
 def api_upload_save(game_id):
     if not get_game_dir(game_id).exists():
         return jsonify({'error': 'Game not found'}), 404
@@ -352,6 +430,7 @@ def api_upload_save(game_id):
 
 
 @app.route('/api/games/<game_id>/saves/<save_id>', methods=['DELETE'])
+@login_required
 def api_delete_save(game_id, save_id):
     save_dir = get_saves_dir(game_id) / save_id
     if not save_dir.exists():
@@ -361,6 +440,7 @@ def api_delete_save(game_id, save_id):
 
 
 @app.route('/api/games/<game_id>/saves/<save_id>/download')
+@login_required
 def api_download_save(game_id, save_id):
     save_dir = get_saves_dir(game_id) / save_id
     if not save_dir.exists():
@@ -385,6 +465,7 @@ def api_download_save(game_id, save_id):
 # ── Archives ──────────────────────────────────────────────────────────────────
 
 @app.route('/api/games/<game_id>/archives', methods=['GET'])
+@login_required
 def api_list_archives(game_id):
     if not get_game_dir(game_id).exists():
         return jsonify({'error': 'Game not found'}), 404
@@ -403,6 +484,7 @@ def api_list_archives(game_id):
 
 
 @app.route('/api/games/<game_id>/archives', methods=['POST'])
+@login_required
 def api_upload_archive(game_id):
     if not get_game_dir(game_id).exists():
         return jsonify({'error': 'Game not found'}), 404
@@ -418,6 +500,7 @@ def api_upload_archive(game_id):
 
 
 @app.route('/api/games/<game_id>/archives/<filename>', methods=['DELETE'])
+@login_required
 def api_delete_archive(game_id, filename):
     arch_path = get_archives_dir(game_id) / filename
     if not arch_path.exists():
@@ -427,6 +510,7 @@ def api_delete_archive(game_id, filename):
 
 
 @app.route('/api/games/<game_id>/archives/<filename>/download')
+@login_required
 def api_download_archive(game_id, filename):
     arch_dir = get_archives_dir(game_id)
     arch_path = arch_dir / filename
