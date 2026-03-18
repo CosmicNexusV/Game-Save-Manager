@@ -1,0 +1,5 @@
+flask==3.0.3
+flask-cors==4.0.1
+icoextract==0.1.4
+Pillow==10.4.0
+python-magic==0.4.27

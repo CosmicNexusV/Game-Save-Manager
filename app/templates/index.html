@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Save Manager</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="6" width="20" height="12" rx="2"/>
+          <path d="M12 12h.01M8 12h.01M16 12h.01"/>
+          <path d="M6 9v6M18 9v6"/>
+        </svg>
+        <span>Game Save Manager</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost" onclick="openSettings()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          设置
+        </button>
+        <button class="btn btn-primary" onclick="openAddGame()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          添加游戏
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+    <div id="empty-state" class="empty-state" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="6" width="20" height="12" rx="2"/>
+        <path d="M12 12h.01M8 12h.01M16 12h.01"/>
+      </svg>
+      <h2>还没有游戏</h2>
+      <p>点击「添加游戏」开始管理你的游戏存档</p>
+      <button class="btn btn-primary" onclick="openAddGame()">添加游戏</button>
+    </div>
+    <div id="games-grid" class="games-grid" style="display:none"></div>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast-container"></div>
+
+  <!-- ── Modal: Add/Edit Game ─────────────────────────────────────────── -->
+  <div id="modal-game" class="modal-overlay" onclick="closeModal('modal-game')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="modal-game-title">添加游戏</h2>
+        <button class="modal-close" onclick="closeModal('modal-game')">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-game" onsubmit="submitGame(event)">
+          <input type="hidden" id="game-edit-id" value="">
+
+          <div class="form-group">
+            <label>游戏名称 *</label>
+            <input type="text" id="game-name" placeholder="例如：黑神话：悟空" required>
+          </div>
+
+          <div class="form-group">
+            <label>游戏图标</label>
+            <div class="icon-options">
+              <div class="icon-option" id="icon-opt-exe" onclick="selectIconOption('exe')">
+                <div class="icon-option-radio" id="radio-exe"></div>
+                <div>
+                  <div class="icon-option-title">.exe 或快捷方式</div>
+                  <div class="icon-option-desc">自动提取程序图标</div>
+                </div>
+              </div>
+              <div class="icon-option" id="icon-opt-img" onclick="selectIconOption('img')">
+                <div class="icon-option-radio" id="radio-img"></div>
+                <div>
+                  <div class="icon-option-title">图片文件</div>
+                  <div class="icon-option-desc">PNG / JPG / ICO</div>
+                </div>
+              </div>
+              <div class="icon-option" id="icon-opt-none" onclick="selectIconOption('none')">
+                <div class="icon-option-radio" id="radio-none"></div>
+                <div>
+                  <div class="icon-option-title">不设置图标</div>
+                  <div class="icon-option-desc">使用默认图标</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="upload-exe" class="upload-area" style="display:none" onclick="document.getElementById('input-exe').click()">
+              <input type="file" id="input-exe" accept=".exe,.lnk" style="display:none" onchange="previewExe(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              <div id="exe-label">点击选择 .exe 文件</div>
+              <div id="exe-extract-hint" style="display:none;font-size:0.78rem;opacity:0.7;margin-top:2px">图标将在保存时自动提取</div>
+            </div>
+
+            <div id="upload-img" class="upload-area" style="display:none" onclick="document.getElementById('input-img').click()">
+              <input type="file" id="input-img" accept="image/*,.ico" style="display:none" onchange="previewImg(this)">
+              <div id="img-preview-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <div>点击选择图片</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('modal-game')">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Game Detail ───────────────────────────────────────────── -->
+  <div id="modal-detail" class="modal-overlay" onclick="closeModal('modal-detail')">
+    <div class="modal modal-lg" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="detail-header-left">
+          <img id="detail-icon" class="detail-icon" src="" alt="">
+          <h2 id="detail-name"></h2>
+        </div>
+        <div class="detail-header-right">
+          <button class="btn btn-ghost btn-sm" onclick="editCurrentGame()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            编辑
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCurrentGame()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+            </svg>
+            删除游戏
+          </button>
+          <button class="modal-close" onclick="closeModal('modal-detail')">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('saves')">存档管理</button>
+          <button class="tab" onclick="switchTab('archives')">游戏文件</button>
+        </div>
+
+        <!-- Saves Tab -->
+        <div id="tab-saves" class="tab-content">
+          <div class="tab-toolbar">
+            <div class="upload-save-area" id="save-drop-zone">
+              <form id="form-save" onsubmit="uploadSave(event)">
+                <div class="save-upload-row">
+                  <input type="text" id="save-label" placeholder="存档备注（可选）" class="save-label-input">
+                  <label class="btn btn-ghost" for="input-save-files">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    选择文件
+                  </label>
+                  <input type="file" id="input-save-files" multiple style="display:none" onchange="onSaveFilesSelected(this, 'files')">
+                  <label class="btn btn-ghost" for="input-save-folder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                    </svg>
+                    选择文件夹
+                  </label>
+                  <input type="file" id="input-save-folder" webkitdirectory multiple style="display:none" onchange="onSaveFilesSelected(this, 'folder')">
+                  <button type="submit" class="btn btn-primary" id="btn-upload-save" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    上传存档
+                  </button>
+                </div>
+                <div id="save-file-list" class="save-file-list"></div>
+              </form>
+            </div>
+          </div>
+          <div id="saves-list" class="saves-list">
+            <div class="loading-inline"><div class="spinner spinner-sm"></div></div>
+          </div>
+        </div>
+
+        <!-- Archives Tab -->
+        <div id="tab-archives" class="tab-content" style="display:none">
+          <div class="tab-toolbar">
+            <label class="btn btn-ghost">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              上传游戏压缩包
+              <input type="file" id="input-archive" style="display:none" onchange="uploadArchive(this)">
+            </label>
+          </div>
+          <div id="archives-list" class="archives-list">
+            <div class="loading-inline"><div class="spinner spinner-sm"></div></div>
+          </div>
+          <div class="archive-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            上传游戏压缩包后可直接从此处下载，方便在不同设备上使用
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Settings ─────────────────────────────────────────────── -->
+  <div id="modal-settings" class="modal-overlay" onclick="closeModal('modal-settings')">
+    <div class="modal modal-sm" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>设置</h2>
+        <button class="modal-close" onclick="closeModal('modal-settings')">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="saveSettings(event)">
+          <div class="form-group">
+            <label>每个游戏最多保留存档数</label>
+            <input type="number" id="setting-max-saves" min="1" max="99" value="3">
+            <div class="form-hint">超出数量的旧存档将自动删除</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('modal-settings')">取消</button>
+            <button type="submit" class="btn btn-primary">保存设置</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress overlay -->
+  <div id="progress-overlay" class="progress-overlay" style="display:none">
+    <div class="progress-box">
+      <div class="spinner"></div>
+      <p id="progress-msg">上传中，请稍候...</p>
+      <div class="progress-bar-wrap"><div id="progress-bar" class="progress-bar"></div></div>
+    </div>
+  </div>
+
+</div>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

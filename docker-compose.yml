@@ -1,0 +1,17 @@
+services:
+  game-save-manager:
+    build: .
+    container_name: game-save-manager
+    restart: unless-stopped
+    ports:
+      - "8085:5000"
+    volumes:
+      - /mnt/nas/game-save-data:/data
+      - ./app:/app
+    environment:
+      - FLASK_ENV=production
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
