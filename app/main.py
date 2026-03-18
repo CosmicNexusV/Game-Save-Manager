@@ -451,9 +451,11 @@ def api_download_save(game_id, save_id):
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for f in save_dir.iterdir():
-            if f.name != 'save_info.json':
-                zf.write(f, f.name)
+        for f in save_dir.rglob('*'):
+            if f.name == 'save_info.json' and f.parent == save_dir:
+                continue
+            if f.is_file():
+                zf.write(f, f.relative_to(save_dir))
     buf.seek(0)
 
     safe_name = "".join(c for c in game_name if c.isalnum() or c in (' ', '-', '_')).strip()
