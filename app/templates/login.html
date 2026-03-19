@@ -7,22 +7,35 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #0f1117;
-  --bg2: #181c27;
-  --bg3: #1e2333;
-  --border: #2a2f45;
-  --border2: #3a4060;
-  --accent: #6c63ff;
-  --accent2: #8b83ff;
-  --accent-dim: rgba(108,99,255,0.15);
-  --danger: #e05c5c;
-  --text: #e8eaf0;
-  --text2: #9ba3c4;
-  --text3: #6b748f;
+  --bg: #eef3ff;
+  --bg2: #ffffff;
+  --bg3: #e4ecff;
+  --border: #c5d5f5;
+  --border2: #a8c0ee;
+  --accent: #4a82e4;
+  --accent2: #3a72d4;
+  --accent-dim: rgba(74,130,228,0.13);
+  --danger: #d94060;
+  --text: #1a2550;
+  --text2: #445088;
+  --text3: #8090c0;
   --radius: 12px;
   --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow: 0 4px 24px rgba(74,130,228,0.15);
   --transition: 0.2s ease;
+}
+[data-theme="pink"] {
+  --bg: #fff0f5;
+  --bg2: #ffffff;
+  --bg3: #ffe8f0;
+  --border: #f5c8d8;
+  --border2: #f0a0c0;
+  --accent: #e0609a;
+  --accent2: #cc4888;
+  --text: #3a1830;
+  --text2: #6a3858;
+  --text3: #b888a0;
+  --shadow: 0 4px 24px rgba(224,96,154,0.15);
 }
 html { font-size: 14px; }
 body {
@@ -71,9 +84,9 @@ body {
   margin-bottom: 28px;
 }
 .error-msg {
-  background: rgba(224,92,92,0.12);
-  border: 1px solid rgba(224,92,92,0.3);
-  color: #f08080;
+  background: rgba(217,64,96,0.10);
+  border: 1px solid rgba(217,64,96,0.3);
+  color: var(--danger);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   font-size: 0.85rem;
@@ -125,6 +138,12 @@ body {
   transform: translateY(0);
 }
 </style>
+<script>
+  (function(){
+    var t = localStorage.getItem('theme');
+    if (t === 'pink') document.documentElement.setAttribute('data-theme', 'pink');
+  })();
+</script>
 </head>
 <body>
 <div class="login-container">

@@ -5,8 +5,24 @@ let games = [];
 let currentGame = null;
 let iconOption = 'none';
 
+/* ── Theme ────────────────────────────────────────────────────────────── */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme === 'pink' ? 'pink' : '');
+  const dot = document.getElementById('theme-dot');
+  const label = document.getElementById('theme-label');
+  if (dot)  { dot.className = 'theme-dot ' + (theme === 'pink' ? 'theme-dot-pink' : 'theme-dot-blue'); }
+  if (label){ label.textContent = theme === 'pink' ? '粉红' : '粉蓝'; }
+  localStorage.setItem('theme', theme);
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem('theme') || 'blue';
+  applyTheme(current === 'pink' ? 'blue' : 'pink');
+}
+
 /* ── Init ─────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(localStorage.getItem('theme') || 'blue');
   loadGames();
   setupDragDrop();
 });
